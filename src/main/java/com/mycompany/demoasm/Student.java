@@ -66,9 +66,11 @@ public class Student {
             System.out.println("2. Edit Student");
             System.out.println("3. Delete Student");
             System.out.println("4. Display All Students");
-            System.out.println("5. Sort Students by Score");
-            System.out.println("6. Search Student by ID");
-            System.out.println("7. Exit");
+            System.out.println("5. Sort Students by Bubble Sort");
+            System.out.println("6. Sort Students by Quick Sort");
+            System.out.println("7. Search Student by Linear Search");
+            System.out.println("8. Search Student by Binary Search");
+            System.out.println("9. Exit");
             System.out.print("Choose an option: ");
 
             int choice = getValidInt();
@@ -86,17 +88,23 @@ public class Student {
                     displayAllStudents();
                     break;
                 case 5:
-                    sortStudentsByScore();
+                    sortStudentsByScore(); // Bubble Sort
                     break;
                 case 6:
-                    searchStudentById();
+                    sortStudentsByQuickSort(); // Quick Sort
                     break;
                 case 7:
+                    searchStudentById(); // Linear Search
+                    break;
+                case 8:
+                    searchStudentByBinarySearch(); // Binary Search
+                    break;
+                case 9:
                     running = false;
                     System.out.println("Exiting program.");
                     break;
                 default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 7.");
+                    System.out.println("Invalid choice. Please enter a number between 1 and 9.");
                     break;
             }
         }
@@ -111,6 +119,11 @@ public class Student {
         while (true) {
             System.out.print("Enter ID: ");
             id = getValidInt();
+
+            if (findStudentById(id) != null) {
+                System.out.println("ID already exists. Please enter a unique ID.");
+                continue;
+            }
 
             System.out.print("Enter Name: ");
             name = getValidString();
@@ -206,23 +219,93 @@ public class Student {
                 }
             }
         }
-        System.out.println("Students sorted by score:");
+        System.out.println("Students sorted by Bubble Sort:");
+        displayAllStudents();
+    }
+
+    private static void quickSort(ArrayList<Student> students, int low, int high) {
+        if (low < high) {
+            int pivotIndex = partition(students, low, high);
+            quickSort(students, low, pivotIndex - 1);
+            quickSort(students, pivotIndex + 1, high);
+        }
+    }
+
+    private static int partition(ArrayList<Student> students, int low, int high) {
+        Student pivot = students.get(high);
+        int i = low - 1;
+
+        for (int j = low; j < high; j++) {
+            if (students.get(j).getScore() > pivot.getScore()) {
+                i++;
+                Student temp = students.get(i);
+                students.set(i, students.get(j));
+                students.set(j, temp);
+            }
+        }
+
+        Student temp = students.get(i + 1);
+        students.set(i + 1, students.get(high));
+        students.set(high, temp);
+
+        return i + 1;
+    }
+
+    private static void sortStudentsByQuickSort() {
+        if (students.isEmpty()) {
+            System.out.println("No students to sort.");
+            return;
+        }
+        quickSort(students, 0, students.size() - 1);
+        System.out.println("Students sorted by Quick Sort:");
         displayAllStudents();
     }
 
     private static void searchStudentById() {
-        while (true) {
-            System.out.print("Enter the ID of the student to search: ");
-            int id = getValidInt();
-            Student student = findStudentById(id);
-            if (student != null) {
-                System.out.println("Student found:");
-                student.printInfo();
-                break;
+        System.out.print("Enter the ID of the student to search: ");
+        int id = getValidInt();
+        Student student = findStudentById(id);
+        if (student != null) {
+            System.out.println("Student found:");
+            student.printInfo();
+        } else {
+            System.out.println("Student with ID " + id + " not found.");
+        }
+    }
+
+    private static void searchStudentByBinarySearch() {
+        if (students.isEmpty()) {
+            System.out.println("No students to search.");
+            return;
+        }
+
+        students.sort((s1, s2) -> Integer.compare(s1.getId(), s2.getId()));
+
+        System.out.print("Enter the ID of the student to search: ");
+        int id = getValidInt();
+        int index = binarySearch(students, 0, students.size() - 1, id);
+
+        if (index != -1) {
+            System.out.println("Student found:");
+            students.get(index).printInfo();
+        } else {
+            System.out.println("Student with ID " + id + " not found.");
+        }
+    }
+
+    private static int binarySearch(ArrayList<Student> students, int low, int high, int targetId) {
+        if (low <= high) {
+            int mid = low + (high - low) / 2;
+            if (students.get(mid).getId() == targetId) {
+                return mid;
+            }
+            if (students.get(mid).getId() > targetId) {
+                return binarySearch(students, low, mid - 1, targetId);
             } else {
-                System.out.println("Student with ID " + id + " not found. Please try again.");
+                return binarySearch(students, mid + 1, high, targetId);
             }
         }
+        return -1;
     }
 
     private static Student findStudentById(int id) {
@@ -234,28 +317,20 @@ public class Student {
         return null;
     }
 
-    // Input validation methods
     private static int getValidInt() {
         while (true) {
             try {
                 return scanner.nextInt();
             } catch (InputMismatchException e) {
                 System.out.print("Invalid input. Please enter a valid integer: ");
-                scanner.nextLine(); // Clear invalid input
+                scanner.next();
             }
         }
     }
 
     private static String getValidString() {
-        scanner.nextLine(); // Clear buffer
-        while (true) {
-            String input = scanner.nextLine().trim();
-            if (!input.isEmpty()) {
-                return input;
-            } else {
-                System.out.print("Invalid input. Please enter a valid string: ");
-            }
-        }
+        scanner.nextLine(); // Consume newline left-over
+        return scanner.nextLine();
     }
 
     private static double getValidDouble(double min, double max) {
@@ -265,11 +340,11 @@ public class Student {
                 if (value >= min && value <= max) {
                     return value;
                 } else {
-                    System.out.printf("Invalid input. Please enter a value between %.2f and %.2f: ", min, max);
+                    System.out.print("Invalid input. Please enter a value between " + min + " and " + max + ": ");
                 }
             } catch (InputMismatchException e) {
                 System.out.print("Invalid input. Please enter a valid number: ");
-                scanner.nextLine(); // Clear invalid input
+                scanner.next();
             }
         }
     }
